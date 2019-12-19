@@ -16,7 +16,7 @@ const PAYLOAD_SIZE: usize = 1024;
 fn main() {
     println!("Hello, sphinx!");
 
-    for _ in 0..100000 {
+    for _ in 0..1000 {
         let (node1_sk, node1_pk) = crypto::keygen();
         let node1 = Node::new([5u8; NODE_ADDRESS_LENGTH], node1_pk);
         let (node2_sk, node2_pk) = crypto::keygen();
