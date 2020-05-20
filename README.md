@@ -16,7 +16,7 @@ If you want your results to be as accurate as possible, stop running as many oth
 Start a terminal, `cd` into the top-level of this project, and run:
 
 ```
-scripts/bench.sh
+scripts/bench-full.sh
 ```
 
 The Linux [perf](https://perf.wiki.kernel.org/index.php/Main_Page) utility will then output data about time spent, and the [FlameGraph](https://github.com/brendangregg/FlameGraph) stack trace visualizer will give you a graphical analysis of time spent in the different parts of the program stack. 
