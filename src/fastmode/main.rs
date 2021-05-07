@@ -12,7 +12,7 @@ const DESTINATION_ADDRESS_LENGTH: usize = 32;
 const IDENTIFIER_LENGTH: usize = 16;
 
 fn main() {
-    println!("Creating 1 Sphinx packet and unwrapping it a lot of times");
+    println!("Creating 1 Sphinx packet and unwrapping it a lot of times in fast mode");
 
     let (node1_sk, node1_pk) = crypto::keygen();
     let node1 = Node::new(
@@ -42,10 +42,11 @@ fn main() {
         [1u8; HKDF_SALT_SIZE],
         [3u8; HKDF_SALT_SIZE],
     ];
-    let packet =
-        SphinxPacket::new(message.clone(), &route, &destination, &delays, &hkdf_salt).unwrap();
+    let packet = Box::new(
+        SphinxPacket::new(message.clone(), &route, &destination, &delays, &hkdf_salt).unwrap(),
+    );
 
     for _ in 0..1000 {
-        packet.clone().process(node1_sk).unwrap();
+        packet.clone().process(&node1_sk).unwrap();
     }
 }
