@@ -7,6 +7,7 @@ use sphinx::route::{Destination, DestinationAddressBytes, Node};
 use sphinx::ProcessedPacket;
 use sphinx::SphinxPacket;
 use std::time::Duration;
+use sphinx::test_utils::fixtures::hkdf_salt_fixture;
 
 const NODE_ADDRESS_LENGTH: usize = 32;
 const DESTINATION_ADDRESS_LENGTH: usize = 32;
@@ -35,6 +36,7 @@ fn main() {
         );
 
         let route = [node1, node2, node3];
+        let hkdf_salt = [hkdf_salt_fixture(), hkdf_salt_fixture(), hkdf_salt_fixture()];
         let average_delay = Duration::from_secs_f64(1.0);
         let delays = delays::generate_from_average_duration(route.len(), average_delay);
         let destination = Destination::new(
@@ -48,15 +50,15 @@ fn main() {
             &route,
             &destination,
             &delays,
-            None,
+            &hkdf_salt,
         )
         .unwrap()
         {
             SphinxPacket { header, payload } => SphinxPacket { header, payload },
         };
 
-        let next_sphinx_packet_1 = match sphinx_packet.process(node1_sk).unwrap() {
-            ProcessedPacket::ProcessedPacketForwardHop(next_packet, next_hop_addr1, _delay1) => {
+        let next_sphinx_packet_1 = match sphinx_packet.process(&node1_sk).unwrap() {
+            ProcessedPacket::ForwardHop(next_packet, next_hop_addr1, _delay1) => {
                 assert_eq!(
                     NodeAddressBytes::from_bytes([4u8; NODE_ADDRESS_LENGTH]),
                     next_hop_addr1
@@ -66,8 +68,8 @@ fn main() {
             _ => panic!(),
         };
 
-        let next_sphinx_packet_2 = match next_sphinx_packet_1.process(node2_sk).unwrap() {
-            ProcessedPacket::ProcessedPacketForwardHop(next_packet, next_hop_addr2, _delay2) => {
+        let next_sphinx_packet_2 = match next_sphinx_packet_1.process(&node2_sk).unwrap() {
+            ProcessedPacket::ForwardHop(next_packet, next_hop_addr2, _delay2) => {
                 assert_eq!(
                     NodeAddressBytes::from_bytes([2u8; NODE_ADDRESS_LENGTH]),
                     next_hop_addr2
@@ -77,26 +79,18 @@ fn main() {
             _ => panic!(),
         };
 
-        match next_sphinx_packet_2.process(node3_sk).unwrap() {
-            ProcessedPacket::ProcessedPacketFinalHop(_, _, payload) => {
+        match next_sphinx_packet_2.process(&node3_sk).unwrap() {
+            ProcessedPacket::FinalHop(_, _, payload) => {
                 let zero_bytes = vec![0u8; SECURITY_PARAMETER];
-                let additional_padding = vec![
-                    0u8;
-                    PAYLOAD_SIZE
-                        - SECURITY_PARAMETER
-                        - message.len()
-                        - destination.address.as_bytes().len()
-                        - 1
-                ];
+                let additional_padding = vec![0u8; PAYLOAD_SIZE - SECURITY_PARAMETER - message.len() - 1];
                 let expected_payload = [
                     zero_bytes,
-                    destination.address.to_bytes().to_vec(),
                     message,
                     vec![1],
                     additional_padding,
                 ]
                 .concat();
-                assert_eq!(expected_payload, payload.get_content());
+                assert_eq!(expected_payload, payload.as_bytes());
             }
             _ => panic!(),
         };
