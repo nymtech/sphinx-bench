@@ -23,3 +23,7 @@ path = "src/process/main.rs"
 [[bin]]
 name = "sphinx-bench-create"
 path = "src/create/main.rs"
+
+[[bin]]
+name = "sphinx-bench-create-key-reuse"
+path = "src/create_key_reuse/main.rs"
